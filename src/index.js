@@ -4,7 +4,7 @@ const fs = require('fs');
 
 let _innerLogger = null;
 
-const add_write_streams = function(self, arfiles, isappend) {
+const add_write_streams = (self, arfiles, isappend) => {
     let openflags;
     openflags = 'w+';
     if (isappend) {
@@ -40,9 +40,8 @@ const add_write_streams = function(self, arfiles, isappend) {
     });
 };
 
-const format_string = function(...args) {
-    return util.format(...args);
-};
+const format_string = (...args) => util.format(...args);
+
 
 function TraceLog(options) {
     const self = this;
@@ -54,7 +53,7 @@ function TraceLog(options) {
     this.finish_need_counts = 0;
     this.finish_counts = 0;
     this.real_finish_callback = null;
-    this.finish_callback = function(err) {
+    this.finish_callback = err => {
         self.finish_counts += 1;
         if (err) {
             if (self.real_finish_callback !== null) {
@@ -67,7 +66,7 @@ function TraceLog(options) {
             }
         }
     };
-    this.finish = function(callback) {
+    this.finish = callback => {
         let ws;
         self.finish_need_counts = self.writeStreams.length;
         self.finish_counts = 0;
@@ -123,7 +122,7 @@ function TraceLog(options) {
     return this;
 }
 
-module.exports.Init = function(options) {
+module.exports.Init = options => {
     const inner_options = options || {};
     let oldinner = null;
     oldinner = _innerLogger;
@@ -131,7 +130,7 @@ module.exports.Init = function(options) {
     return oldinner;
 };
 
-module.exports.Set = function(logger) {
+module.exports.Set = logger => {
     const oldinner = _innerLogger;
     if (logger === null || Array.isArray(logger.writeStreams)) {
         _innerLogger = oldinner;
@@ -139,7 +138,7 @@ module.exports.Set = function(logger) {
     return oldinner;
 };
 
-const inner_init = function(options) {
+const inner_init = options => {
     const inner_options = options || {};
     if (_innerLogger) {
         return _innerLogger;
@@ -148,37 +147,37 @@ const inner_init = function(options) {
     return null;
 };
 
-module.exports.trace = function(...args) {
+module.exports.trace = (...args) => {
     const utilstr = format_string(...args);
     inner_init();
     _innerLogger.innerLogger.trace(utilstr);
 };
 
-module.exports.debug = function(...args) {
+module.exports.debug = (...args) => {
     const utilstr = format_string(...args);
     inner_init();
     _innerLogger.innerLogger.debug(utilstr);
 };
 
-module.exports.info = function(...args) {
+module.exports.info = (...args) => {
     const utilstr = format_string(...args);
     inner_init();
     _innerLogger.innerLogger.info(utilstr);
 };
 
-module.exports.warn = function(...args) {
+module.exports.warn = (...args) => {
     const utilstr = format_string(...args);
     inner_init();
     _innerLogger.innerLogger.warn(utilstr);
 };
 
-module.exports.error = function(...args) {
+module.exports.error = (...args) => {
     const utilstr = format_string(...args);
     inner_init();
     _innerLogger.innerLogger.error(utilstr);
 };
 
-module.exports.finish = function(callback) {
+module.exports.finish = callback => {
     if (_innerLogger !== null) {
         _innerLogger.finish(callback);
     } else if (callback !== undefined && callback !== null) {
@@ -187,7 +186,7 @@ module.exports.finish = function(callback) {
     _innerLogger = null;
 };
 
-module.exports.init_args = function(parser) {
+module.exports.init_args = parser => {
     const tracelog_options = `
     {
         "+log" : {
@@ -203,7 +202,7 @@ module.exports.init_args = function(parser) {
     return parser;
 };
 
-const set_attr_self_inner = function(self, args, prefix) {
+const set_attr_self_inner = (self, args, prefix) => {
     let curkey;
     let i;
     let prefixnew;
@@ -227,7 +226,7 @@ const set_attr_self_inner = function(self, args, prefix) {
     return retself;
 };
 
-module.exports.set_args = function(options) {
+module.exports.set_args = options => {
     const logopt = {};
     if (options.verbose >= 4) {
         logopt.level = 'trace';

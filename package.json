@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": "http://github.com/jeppeter/jslog",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node ./node_modules/ava/cli.js --verbose test/*",
     "build": "node ./node_modules/babel-cli/bin/babel.js src --out-dir lib",
     "buildexample": "node ./node_modules/babel-cli/bin/babel.js example --out-dir libexample"
   },
