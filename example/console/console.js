@@ -1,6 +1,8 @@
 // import * as jslog from '../../lib';
 
-const jslog = require('../../lib');
+import * as jslog from '../../lib';
+
+// const jslog = require('../../lib');
 const extargsparse = require('extargsparse');
 
 const commandline = `{
@@ -48,7 +50,7 @@ args.args.forEach(l => {
     jslog.error('%s', l);
     jslog.warn('%s', l);
     jslog.info('%s', l);
-    jslog.trace('%s', l);
     jslog.debug('%s', l);
+    jslog.trace('%s', l);
 });
 

@@ -1,23 +1,28 @@
 {
-    "name": "tracelog",
-    "version": "1.0.0",
-    "description": "trace log information extension of tracer",
-    "main": "lib/index.js",
-    "repository": "http://github.com/jeppeter/jslog",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "node ./node_modules/babel-cli/bin/babel.js src --out-dir lib",
-        "buildexample" : "node ./node_modules/babel-cli/bin/babel.js example --out-dir libexample"
-    },
-    "dependencies": {
-        "tracer": "latest",
-        "extargsparse": "latest"
-    },
-    "devDependencies": {
-        "ava": "^0.18.1",
-        "babel-cli": "^6.23.0"
-    },
-    "keywords": ["trace", "log"],
-    "author": "jeppeter@gmail.com",
-    "license": "ISC"
+  "name": "jslog",
+  "version": "1.0.0",
+  "description": "js log information extension of tracer",
+  "main": "lib/index.js",
+  "repository": "http://github.com/jeppeter/jslog",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node ./node_modules/babel-cli/bin/babel.js src --out-dir lib",
+    "buildexample": "node ./node_modules/babel-cli/bin/babel.js example --out-dir libexample"
+  },
+  "dependencies": {
+    "tracer": "latest",
+    "extargsparse": "latest"
+  },
+  "devDependencies": {
+    "ava": "^0.18.1",
+    "babel-cli": "^6.23.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1"
+  },
+  "keywords": [
+    "trace",
+    "log"
+  ],
+  "author": "jeppeter@gmail.com",
+  "license": "ISC"
 }
