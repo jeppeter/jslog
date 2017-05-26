@@ -1,9 +1,9 @@
 {
-  "name": "jslog",
+  "name": "jstracer",
   "version": "1.0.0",
-  "description": "js log information extension of tracer",
+  "description": "js tracer for the debug and file information",
   "main": "lib/index.js",
-  "repository": "http://github.com/jeppeter/jslog",
+  "repository": "http://github.com/jeppeter/jstracer",
   "scripts": {
     "test": "node ./node_modules/ava/cli.js --verbose test/*",
     "build": "node ./node_modules/babel-cli/bin/babel.js src --out-dir lib",

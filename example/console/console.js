@@ -1,6 +1,5 @@
-// import * as jslog from '../../lib';
 
-import * as jslog from '../../lib';
+import * as jstracer from '../../lib';
 import * as extargsparse from 'extargsparse';
 
 const commandline = `{
@@ -8,7 +7,7 @@ const commandline = `{
 }`;
 
 const trace_exit = function(ec) {
-    jslog.finish(err => {
+    jstracer.finish(err => {
         if (err) {
             return;
         }
@@ -19,7 +18,7 @@ const trace_exit = function(ec) {
 process.on('uncaughtException', err => {
     'use struct';
 
-    jslog.error('error (%s) stack(%s)', err, err.stack);
+    jstracer.error('error (%s) stack(%s)', err, err.stack);
     trace_exit(3);
 });
 
@@ -40,15 +39,15 @@ let parser = extargsparse.ExtArgsParse({
     },
 });
 parser.load_command_line_string(commandline);
-parser = jslog.init_args(parser);
+parser = jstracer.init_args(parser);
 const args = parser.parse_command_line();
 
-jslog.set_args(args);
+jstracer.set_args(args);
 args.args.forEach(l => {
-    jslog.error('%s', l);
-    jslog.warn('%s', l);
-    jslog.info('%s', l);
-    jslog.debug('%s', l);
-    jslog.trace('%s', l);
+    jstracer.error('%s', l);
+    jstracer.warn('%s', l);
+    jstracer.info('%s', l);
+    jstracer.debug('%s', l);
+    jstracer.trace('%s', l);
 });
 
