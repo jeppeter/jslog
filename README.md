@@ -2,7 +2,7 @@
 > tracer for multiple handles for use
 
 ```js
-import * as jstracer from '../../lib';
+import * as jstracer from 'jstracer';
 
 const trace_exit = function(ec) {
     jstracer.finish(err => {
