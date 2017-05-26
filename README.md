@@ -46,16 +46,16 @@ jstracer.trace('value %s lvalue %s', value, lvalue);
 
 > output 
 ```shell
-\<error\>:console2.js:42 value code lvalue 32
-\<warn\>:console2.js:43 value code lvalue 32
+<error>:console2.js:42 value code lvalue 32
+<warn>:console2.js:43 value code lvalue 32
 ```
 
 ## reference for the key of args set
-> verbose  is the verbose mode default 0 for just error output 
+>  verbose  is the verbose mode default 0 for just error output 
 >            1 for warn output
 >            2 for info output
 >            3 for debug output
->            4 for trace output
+>            4 for trace output <br>
 >  log_files  to log into the file default none ,not to the file 
 >  log_appends : almost as log_files ,but append log to the end of the file
 >  log_console : default true for stderr  if false ,no logout to stdout
