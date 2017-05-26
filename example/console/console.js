@@ -1,9 +1,7 @@
 // import * as jslog from '../../lib';
 
 import * as jslog from '../../lib';
-
-// const jslog = require('../../lib');
-const extargsparse = require('extargsparse');
+import * as extargsparse from 'extargsparse';
 
 const commandline = `{
   "$" : "+"
