@@ -7,6 +7,7 @@ import {
 import * as path from 'path';
 import * as util from 'util';
 import * as fs from 'fs';
+import * as jstracer from '../lib';
 
 const match_expr_lines = (t, lines, matchexprs) => {
     t.truthy(lines.length === matchexprs.length, util.format('%s === %s', lines.length, matchexprs.length));
@@ -172,6 +173,57 @@ test.cb('to make multiple output', t => {
         })
         .catch(err => {
             t.truthy(err === undefined || err === null, `create file error[${err}]`);
+            t.end();
+        });
+});
+
+
+test.cb('to get logger name', t => {
+    Promise.all(
+            range(2).map(() => create_file(t, 'outputXXXXXX.log'))
+        )
+        .then(files => {
+            const log1opt = {
+                log_console: false,
+                log_files: [files[0]],
+                level: 'warn',
+            };
+            const log2opt = {
+                log_console: false,
+                log_files: [files[1]],
+                level: 'warn',
+            };
+            const logger1 = jstracer.Init(log1opt, 'logger1');
+            const logger2 = jstracer.Init(log2opt, 'logger2');
+            logger1.warn('warn logger1');
+            logger1.info('info logger1');
+            logger2.warn('warn logger2');
+            logger2.info('info logger2');
+            logger1.finish(err => {
+                t.truthy(err === undefined || err === null, `finish logger1 error[${err}]`);
+                logger2.finish(err2 => {
+                    t.truthy(err === undefined || err === null, `finish logger2 error[${err2}]`);
+                    Promise.all([
+                        verfiyfile_handle(t, files[0], ['^<warn>.*warn logger1$']),
+                        verfiyfile_handle(t, files[1], ['^<warn>.*warn logger2$']),
+                    ])
+                        .then(() => {
+                            Promise.all(
+                                files.map(f2 => delete_file(t, f2))
+                            )
+                            .then(() => {
+                                t.end();
+                            });
+                        })
+                        .catch(err3 => {
+                            t.truthy(err3 === undefined || err3 === null, `match file error [${err3}]`);
+                            t.end();
+                        });
+                });
+            });
+        })
+        .catch(err => {
+            t.truthy(err === undefined || err === null, `create file error [${err}]`);
             t.end();
         });
 });

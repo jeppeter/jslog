@@ -2,8 +2,6 @@ const tracer = require('tracer');
 const util = require('util');
 const fs = require('fs');
 
-let _innerLogger = null;
-
 const add_write_streams = (self, arfiles, isappend) => {
     let openflags;
     openflags = 'w+';
@@ -31,29 +29,34 @@ const add_write_streams = (self, arfiles, isappend) => {
                 console.log('data (%s) %s', data, elm);
             }
         });
+        /*
         ws.on('close', () => {
             if (!self.noconsole) {
                 console.log('%s closed', elm);
             }
         });
+        */
         self.writeStreams.push(ws);
     });
 };
 
 const format_string = (...args) => util.format(...args);
 
+const loggerMap = {};
 
-function TraceLog(options) {
-    const self = this;
-    this.level = 'error';
-    this.writeStreams = [];
-    this.waitStreams = [];
-    this.stackindex = 1;
-    this.noconsole = false;
-    this.finish_need_counts = 0;
-    this.finish_counts = 0;
-    this.real_finish_callback = null;
-    this.finish_callback = err => {
+
+function TraceLog(options,name) {
+    const self = {};
+    self.level = 'error';
+    self.writeStreams = [];
+    self.waitStreams = [];
+    self.stackindex = 1;
+    self.noconsole = false;
+    self.finish_need_counts = 0;
+    self.finish_counts = 0;
+    self.real_finish_callback = null;
+    self.loggerName = name;
+    self.finish_callback = err => {
         self.finish_counts += 1;
         if (err) {
             if (self.real_finish_callback !== null) {
@@ -62,11 +65,14 @@ function TraceLog(options) {
         }
         if (self.finish_counts === self.finish_need_counts) {
             if (self.real_finish_callback !== null) {
+                if (loggerMap[name] !== undefined && loggerMap[name] !== null) {
+                    delete loggerMap[name];
+                }
                 self.real_finish_callback(null);
             }
         }
     };
-    this.finish = callback => {
+    self.finish = callback => {
         let ws;
         self.finish_need_counts = self.writeStreams.length;
         self.finish_counts = 0;
@@ -80,16 +86,19 @@ function TraceLog(options) {
 
         if (self.finish_need_counts === 0 && callback !== null && callback !== undefined) {
             /* nothing to wait*/
+            if (loggerMap[name] !== undefined && loggerMap[name] !== null) {
+                delete loggerMap[name];
+            }
             callback(null);
         }
     };
-    this.format = '<{{title}}>:{{file}}:{{line}} {{message}}\n';
+    self.format = '<{{title}}>:{{file}}:{{line}} {{message}}\n';
     if (typeof options.log_format === 'string' && options.log_format.length > 0) {
-        this.format = options.log_format;
+        self.format = options.log_format;
     }
 
     if (typeof options.level === 'string') {
-        this.level = options.level;
+        self.level = options.level;
     }
 
     if (util.isArray(options.log_files)) {
@@ -101,11 +110,11 @@ function TraceLog(options) {
     }
 
     if (typeof options.log_console === 'boolean' && !options.log_console) {
-        this.noconsole = true;
+        self.noconsole = true;
     }
 
 
-    this.innerLogger = tracer.console({
+    self.innerLogger = tracer.console({
         format: [self.format],
         stackIndex: self.stackindex,
         transport(data) {
@@ -118,72 +127,101 @@ function TraceLog(options) {
         },
     });
 
-    tracer.setLevel(this.level);
-    return this;
+
+    self.trace = (...args) => {
+        const utilstr = format_string(...args);
+        self.innerLogger.trace(utilstr);
+    };
+
+    self.debug = (...args) => {
+        const utilstr = format_string(...args);
+        self.innerLogger.debug(utilstr);
+    };
+
+    self.info = (...args) => {
+        const utilstr = format_string(...args);
+        self.innerLogger.info(utilstr);
+    };
+
+    self.warn = (...args) => {
+        const utilstr = format_string(...args);
+        self.innerLogger.warn(utilstr);
+    };
+
+    self.error = (...args) => {
+        const utilstr = format_string(...args);
+        self.innerLogger.error(utilstr);
+    };
+
+    tracer.setLevel(self.level);
+    return self;
 }
 
-module.exports.Init = options => {
+
+const inner_init = (options, name) => {
     const inner_options = options || {};
-    let oldinner = null;
-    oldinner = _innerLogger;
-    _innerLogger = new TraceLog(inner_options);
-    return oldinner;
+    let optname = 'root';
+    if (name !== undefined) {
+        optname = name;
+    }
+
+    if (loggerMap[optname] !== undefined) {
+        return loggerMap[optname];
+    }
+
+    loggerMap[optname] = new TraceLog(inner_options, optname);
+    return loggerMap[optname];
 };
 
-module.exports.Set = logger => {
-    const oldinner = _innerLogger;
-    if (logger === null || Array.isArray(logger.writeStreams)) {
-        _innerLogger = oldinner;
-    }
-    return oldinner;
-};
 
-const inner_init = options => {
-    const inner_options = options || {};
-    if (_innerLogger) {
-        return _innerLogger;
-    }
-    _innerLogger = new TraceLog(inner_options);
-    return null;
-};
+module.exports.Init = (options, name) => inner_init(options, name);
 
 module.exports.trace = (...args) => {
-    const utilstr = format_string(...args);
-    inner_init();
-    _innerLogger.innerLogger.trace(utilstr);
+    const logger = inner_init({}, 'root');
+    logger.trace(...args);
 };
 
 module.exports.debug = (...args) => {
-    const utilstr = format_string(...args);
-    inner_init();
-    _innerLogger.innerLogger.debug(utilstr);
+    const logger = inner_init({}, 'root');
+    logger.debug(...args);
 };
 
 module.exports.info = (...args) => {
-    const utilstr = format_string(...args);
-    inner_init();
-    _innerLogger.innerLogger.info(utilstr);
+    const logger = inner_init({}, 'root');
+    logger.info(...args);
 };
 
 module.exports.warn = (...args) => {
-    const utilstr = format_string(...args);
-    inner_init();
-    _innerLogger.innerLogger.warn(utilstr);
+    const logger = inner_init({}, 'root');
+    logger.warn(...args);
 };
 
 module.exports.error = (...args) => {
-    const utilstr = format_string(...args);
-    inner_init();
-    _innerLogger.innerLogger.error(utilstr);
+    const logger = inner_init({}, 'root');
+    logger.error(...args);
+};
+
+
+const finish_all_loggers = callback => {
+    const names = loggerMap.keys();
+    if (names.length > 0) {
+        loggerMap[names[0]].finish(err => {
+            if (err !== undefined && err !== null) {
+                callback(err);
+                return;
+            }
+            if (loggerMap[names[0]] !== undefined && loggerMap[names[0]] !== null) {
+                delete loggerMap[names[0]];
+            }
+            finish_all_loggers(callback);
+        });
+    } else {
+        callback(null);
+    }
 };
 
 module.exports.finish = callback => {
-    if (_innerLogger !== null) {
-        _innerLogger.finish(callback);
-    } else if (callback !== undefined && callback !== null) {
-        callback(null);
-    }
-    _innerLogger = null;
+    finish_all_loggers(callback);
 };
 
 module.exports.init_args = parser => {
@@ -226,7 +264,7 @@ const set_attr_self_inner = (self, args, prefix) => {
     return retself;
 };
 
-module.exports.set_args = options => {
+module.exports.set_args = (options, name) => {
     const logopt = {};
     if (options.verbose >= 4) {
         logopt.level = 'trace';
@@ -245,5 +283,5 @@ module.exports.set_args = options => {
         showHidden: true,
         depth: null
     }));*/
-    module.exports.Init(logopt);
+    module.exports.Init(logopt, name);
 };
