@@ -203,7 +203,7 @@ module.exports.error = (...args) => {
 
 
 const finish_all_loggers = callback => {
-    const names = loggerMap.keys();
+    const names = Object.keys(loggerMap);
     if (names.length > 0) {
         loggerMap[names[0]].finish(err => {
             if (err !== undefined && err !== null) {
@@ -283,5 +283,5 @@ module.exports.set_args = (options, name) => {
         showHidden: true,
         depth: null
     }));*/
-    module.exports.Init(logopt, name);
+    return module.exports.Init(logopt, name);
 };
