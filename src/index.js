@@ -40,12 +40,77 @@ const add_write_streams = (self, arfiles, isappend) => {
     });
 };
 
-const format_string = (...args) => util.format(...args);
+const parse_line_func = (l) => {
+    'use strict';
+    var stk = null;
+    var findexpr = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\(([^\\)]+)\\).*$');
+    var m1;
+    var linenum;
+    var lastidx, curidx, hasfind = 0;
+    m1 = findexpr.exec(l);
+    if (m1 !== undefined && m1 !== null) {
+        stk = {};
+        stk.funcname = m1[1];
+        curidx = m1[2].length;
+        lastidx = curidx;
+        while (hasfind < 2 && curidx > 0) {
+            curidx -= 1;
+            if (m1[2][curidx] === ':') {
+                hasfind += 1;
+                if (hasfind === 1) {
+                    lastidx = curidx;
+                }
+            }
+        }
+
+        if (curidx === 0) {
+            return null;
+        }
+        stk.filename = m1[2].substring(0, curidx);
+        linenum = m1[2].substring(curidx + 1, lastidx);
+        stk.lineno = parseInt(linenum, 10);
+    }
+    return stk;
+};
+
+
+const get_stacks = () => {
+    'use strict';
+    var stacks = [];
+    var sarr = [];
+    var idx;
+    var curstk;
+    try {
+        throw new Error('error');
+    } catch (e) {
+        //console.log('%s', e.stack);
+        sarr = e.stack.split('\n');
+        for (idx = 1; idx < sarr.length; idx += 1) {
+            curstk = parse_line_func(sarr[idx]);
+            if (curstk !== null) {
+                stacks.push(curstk);
+            } else {
+                console.error('[%s]can not get stack [%s]', idx, sarr[idx]);
+            }
+        }
+    }
+    return stacks;
+};
+
+
+const format_string = (...args) => {
+    var rets = '';
+    var msgstr = util.format(...args);
+    var stks = get_stacks();
+    /*now we should make format string to the output*/
+    rets = util.format('[%s:%s:%s] %s', stks[2].filename, stks[2].funcname, stks[2].lineno, msgstr);
+    return rets;
+};
 
 const loggerMap = {};
 
 
-function TraceLog(options,name) {
+function TraceLog(options, name) {
     const self = {};
     self.level = 'error';
     self.writeStreams = [];
@@ -92,7 +157,7 @@ function TraceLog(options,name) {
             callback(null);
         }
     };
-    self.format = '<{{title}}>:{{file}}:{{line}} {{message}}\n';
+    self.format = '<{{title}}> {{message}}\n';
     if (typeof options.log_format === 'string' && options.log_format.length > 0) {
         self.format = options.log_format;
     }

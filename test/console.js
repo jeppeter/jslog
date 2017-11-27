@@ -54,6 +54,20 @@ const get_console_cmd = (...args) => {
     return cmdline;
 };
 
+const write_file = (t, filename,filecon) => new Promise(resolve => {
+    fs.writeFile(filename,filecon, (err) => {
+        t.truthy(err === undefined || err === null, `write [${filecon}] error [${err}]`);
+        resolve(filename);
+    });
+});
+
+const add_line = (linestr, args) => {
+    args.lineno += 1;
+    args.writestr += linestr;
+    args.writestr += '\n';
+    return args;
+};
+
 const range = n => Array.from(Array(n).keys());
 
 
@@ -226,4 +240,17 @@ test.cb('to get logger name', t => {
             t.truthy(err === undefined || err === null, `create file error [${err}]`);
             t.end();
         });
+});
+
+test.cb('call line func check', t => {
+    var args = {};
+
+    var callfunctionline=0;
+    var callgloballine=0;
+    var includefile = __dirname 
+    args.writestr = '';
+    args.lineno = 0;
+    args = add_line('var jstracer(\'../lib\');', args);
+    args = add_line('var call_a1 = function() {', args);
+
 });
