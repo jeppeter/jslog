@@ -1,6 +1,10 @@
 # nodejs tracer handle
 > tracer for multiple handles for use
 
+### Release History
+* Nov 28th 2017 Release 1.1.2 to fixup bug when call the output format of line and files
+
+
 ```js
 import * as jstracer from 'jstracer';
 
