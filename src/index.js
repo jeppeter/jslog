@@ -43,33 +43,93 @@ const add_write_streams = (self, arfiles, isappend) => {
 const parse_line_func = (l) => {
     'use strict';
     var stk = null;
-    var findexpr = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\(([^\\)]+)\\).*$');
+    var findexpr1 = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\(([^\\)]+)\\)$');
+    var findexpr2 = new RegExp('^\\s+at\\s+([^\\s]+)$');
+    var findexpr3 = new RegExp('^\\s+at\\s+([^\\s]+)\\s+\\[([^\\]]+)\\]\\s+\\(([^\\)]+)\\)$');
     var m1;
     var linenum;
     var lastidx, curidx, hasfind = 0;
-    m1 = findexpr.exec(l);
+    m1 = findexpr1.exec(l);
+    //console.error('m1 [%s]', util.inspect(m1, {showHidden:true, depth:null}));
     if (m1 !== undefined && m1 !== null) {
         stk = {};
         stk.funcname = m1[1];
-        curidx = m1[2].length;
-        lastidx = curidx;
-        while (hasfind < 2 && curidx > 0) {
-            curidx -= 1;
-            if (m1[2][curidx] === ':') {
-                hasfind += 1;
-                if (hasfind === 1) {
-                    lastidx = curidx;
+        if (m1[2] !== 'native') {
+            curidx = m1[2].length;
+            lastidx = curidx;
+            while (hasfind < 2 && curidx > 0) {
+                curidx -= 1;
+                if (m1[2][curidx] === ':') {
+                    hasfind += 1;
+                    if (hasfind === 1) {
+                        lastidx = curidx;
+                    }
                 }
             }
-        }
 
-        if (curidx === 0) {
-            return null;
+            if (curidx === 0) {
+                return null;
+            }
+            stk.filename = m1[2].substring(0, curidx);
+            linenum = m1[2].substring(curidx + 1, lastidx);
+            stk.lineno = parseInt(linenum, 10);
+        } else {
+            stk.filename = 'null';
+            stk.lineno = 0;
         }
-        stk.filename = m1[2].substring(0, curidx);
-        linenum = m1[2].substring(curidx + 1, lastidx);
-        stk.lineno = parseInt(linenum, 10);
+    } else {
+        m1 = findexpr2.exec(l);
+        //console.error('m1 [%s]', util.inspect(m1, {showHidden:true, depth:null}));
+        if (m1 !== undefined && m1 !== null) {
+            stk = {};
+            stk.funcname = '';
+            curidx = m1[1].length;
+            lastidx = curidx;
+            hasfind = 0;
+            while( hasfind < 2 && curidx > 0) {
+                curidx -= 1;
+                if (m1[1][curidx] === ':') {
+                    hasfind += 1;
+                    if (hasfind === 1) {
+                        lastidx = curidx;
+                    }
+                }
+            }
+
+            if (curidx === 0) {
+                return null;
+            }
+            stk.filename = m1[1].substring(0,curidx);
+            linenum = m1[1].substring(curidx + 1,lastidx);
+            stk.lineno = parseInt(linenum, 10);
+        } else {
+            m1 = findexpr3.exec(l);
+            if (m1 !== undefined && m1 !== null) {
+                stk = {};
+                stk.funcname = m1[1];
+            }
+            curidx = m1[3].length;
+            lastidx = curidx;
+            hasfind = 0;
+            while( hasfind < 2 && curidx > 0) {
+                curidx -= 1;
+                if (m1[3][curidx] === ':') {
+                    hasfind += 1;
+                    if (hasfind === 1) {
+                        lastidx = curidx;
+                    }
+                }
+            }
+
+            if (curidx === 0) {
+                return null;
+            }
+            stk.filename = m1[3].substring(0,curidx);
+            linenum = m1[3].substring(curidx + 1,lastidx);
+            stk.lineno = parseInt(linenum, 10);
+        }
     }
+
     return stk;
 };
 
@@ -100,10 +160,27 @@ const get_stacks = () => {
 
 const format_string = (...args) => {
     var rets = '';
-    var msgstr = util.format(...args);
+    var callstk=3;
+    var fmtargs = args;
+    var idx;
+    var msgstr;
     var stks = get_stacks();
     /*now we should make format string to the output*/
-    rets = util.format('[%s:%s:%s] %s', stks[2].filename, stks[2].funcname, stks[2].lineno, msgstr);
+    if (Array.isArray(args)) {
+        if (args.length > 0 && typeof args[0] === 'number') {
+            callstk = args[0];
+            callstk += 3;
+            fmtargs = [];
+            for (idx = 1; idx < args.length; idx += 1) {
+                fmtargs.push(args[idx]);
+            }
+        }
+    }
+    msgstr = util.format(...fmtargs);
+    if (callstk >= stks.length) {
+        callstk = stks.length - 1;
+    } 
+    rets = util.format('[%s:%s:%s] %s', stks[callstk].filename, stks[callstk].funcname, stks[callstk].lineno, msgstr);
     return rets;
 };
 
@@ -243,27 +320,98 @@ module.exports.Init = (options, name) => inner_init(options, name);
 
 module.exports.trace = (...args) => {
     const logger = inner_init({}, 'root');
-    logger.trace(...args);
+    let callstk = 1;
+    let fmtargs = args;
+    let idx;
+
+    if (Array.isArray(args)) {
+        if (args.length > 0 && typeof args[0] === 'number') {
+            callstk = args[0];
+            callstk += 1;
+            fmtargs = [];
+            for (idx = 1; idx < args.length ; idx += 1) {
+                fmtargs.push(args[idx]);
+            }
+        }
+    }
+
+    logger.trace(callstk, ...fmtargs);
 };
 
 module.exports.debug = (...args) => {
     const logger = inner_init({}, 'root');
-    logger.debug(...args);
+    let callstk = 1;
+    let fmtargs = args;
+    let idx;
+
+    if (Array.isArray(args)) {
+        if (args.length > 0 && typeof args[0] === 'number') {
+            callstk = args[0];
+            callstk += 1;
+            fmtargs = [];
+            for (idx = 1; idx < args.length ; idx += 1) {
+                fmtargs.push(args[idx]);
+            }
+        }
+    }
+    logger.debug(callstk,...fmtargs);
 };
 
 module.exports.info = (...args) => {
     const logger = inner_init({}, 'root');
-    logger.info(...args);
+    let callstk = 1;
+    let fmtargs = args;
+    let idx;
+
+    if (Array.isArray(args)) {
+        if (args.length > 0 && typeof args[0] === 'number') {
+            callstk = args[0];
+            callstk += 1;
+            fmtargs = [];
+            for (idx = 1; idx < args.length ; idx += 1) {
+                fmtargs.push(args[idx]);
+            }
+        }
+    }
+    logger.info(callstk,...fmtargs);
 };
 
 module.exports.warn = (...args) => {
     const logger = inner_init({}, 'root');
-    logger.warn(...args);
+    let callstk = 1;
+    let fmtargs = args;
+    let idx;
+
+    if (Array.isArray(args)) {
+        if (args.length > 0 && typeof args[0] === 'number') {
+            callstk = args[0];
+            callstk += 1;
+            fmtargs = [];
+            for (idx = 1; idx < args.length ; idx += 1) {
+                fmtargs.push(args[idx]);
+            }
+        }
+    }
+    logger.warn(callstk,...fmtargs);
 };
 
 module.exports.error = (...args) => {
     const logger = inner_init({}, 'root');
-    logger.error(...args);
+    let callstk = 1;
+    let fmtargs = args;
+    let idx;
+
+    if (Array.isArray(args)) {
+        if (args.length > 0 && typeof args[0] === 'number') {
+            callstk = args[0];
+            callstk += 1;
+            fmtargs = [];
+            for (idx = 1; idx < args.length ; idx += 1) {
+                fmtargs.push(args[idx]);
+            }
+        }
+    }
+    logger.error(callstk, ...fmtargs);
 };
 
 
@@ -296,7 +444,7 @@ module.exports.init_args = parser => {
             "appends" : [],
             "files" : [],
             "console" : true,
-            "format" : "<{{title}}>:{{file}}:{{line}} {{message}}\\n"
+            "format" : "<{{title}}> {{message}}\\n"
         },
         "verbose|v" : "+"
     }

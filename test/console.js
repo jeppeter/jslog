@@ -1,5 +1,5 @@
 import test from 'ava';
-// import * as jslog from '../lib';
+
 import * as mktemp from 'mktemp';
 import {
     exec,
@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as util from 'util';
 import * as fs from 'fs';
 import * as jstracer from '../lib';
+import * as upath from 'upath';
 
 const match_expr_lines = (t, lines, matchexprs) => {
     t.truthy(lines.length === matchexprs.length, util.format('%s === %s', lines.length, matchexprs.length));
@@ -61,15 +62,85 @@ const write_file = (t, filename,filecon) => new Promise(resolve => {
     });
 });
 
-const add_line = (linestr, args) => {
+const add_line = (linestr, args, note) => {
+    if (args === undefined || args === null) {
+        args = {};
+        args.writestr = '';
+        args.lineno = 0;
+        args.lines = [];
+        args.notes = [];
+    }
     args.lineno += 1;
     args.writestr += linestr;
     args.writestr += '\n';
+    if (note !== undefined && note !== null) {
+        args.lines.push(args.lineno);
+        args.notes.push(note);
+    }
+
     return args;
 };
 
-const range = n => Array.from(Array(n).keys());
+const add_note = (args,lineno,note) => {
+    if (args === undefined || args === null) {
+        args = {};
+        args.writestr = '';
+        args.lineno = 0;
+        args.lines = [];
+        args.notes = [];
+    }
 
+    if (lineno !== undefined && lineno !== null && note !== undefined && note !== null) {
+        args.lines.push(lineno);
+        args.notes.push(note);
+    }
+    return args;
+};
+
+const format_cmd = (file,...args) => {
+    let retcmd = `node "${file}"`;
+    let idx;
+    if (args !== null && args !== null) {
+        for (idx = 0; idx < args.length; idx += 1) {
+            retcmd += " "  + $args[idx];
+        }
+    }
+    return retcmd;
+};
+
+const parse_line_note = (l) => {
+    let retnote = {};
+    let matchexpr = new RegExp('<([^>]+)>\\s+\\[([^\\]]+)\\]\\s+.*');
+    let m;
+    let lastidx;
+    let finded;
+    let subs;
+    retnote.note = '';
+    retnote.lineno = 0;
+
+    m = matchexpr.exec(l);
+    if (m !== undefined && m !== null) {
+        retnote.note = m[0];
+        cstr = m[1];
+        lastidx = cstr.length;
+        finded = 0
+        while(lastidx >= 0 && finded === 0) {
+            lastidx -= 1;
+            if (cstr[lastidx] === ':') {
+                finded = 1;
+                break;
+            }
+        }
+
+        if (lastidx > 0) {
+            subs = cstr.substring(lastidx + 1);
+            retnote.lineno = parseInt(subs,10);
+        }
+    }
+    return retnote;
+};
+
+const range = n => Array.from(Array(n).keys());
 
 test.cb('to get console out', t => {
     // now to give the coding for out
@@ -100,6 +171,7 @@ test.cb('to give no console output', t => {
         });
 });
 
+
 test.cb('to get the console warn', t => {
     const cmd = get_console_cmd('-v', 'hello', 'world');
     exec(cmd)
@@ -113,7 +185,6 @@ test.cb('to get the console warn', t => {
             t.end();
         });
 });
-
 
 test.cb('to get output file', t => {
     Promise.all([
@@ -144,7 +215,6 @@ test.cb('to get output file', t => {
                 });
         });
 });
-
 
 test.cb('to make multiple output', t => {
     Promise.all(
@@ -243,14 +313,118 @@ test.cb('to get logger name', t => {
 });
 
 test.cb('call line func check', t => {
-    var args = {};
+    let args;
+    let includepath = path.resolve(path.join(__dirname,'..','lib'));
+    let notearr = ['trace','info','debug','warn','error','trace','info','debug','warn','error'];
+    let linearr = [];
+    let idx;
 
-    var callfunctionline=0;
-    var callgloballine=0;
-    var includefile = __dirname 
-    args.writestr = '';
-    args.lineno = 0;
-    args = add_line('var jstracer(\'../lib\');', args);
-    args = add_line('var call_a1 = function() {', args);
+
+    includepath = upath.toUnix(includepath);
+    args = add_line(util.format('var jstracer(\'%s\');', includepath));
+    args = add_line('var args = {};', args);
+    args = add_line('var callA1 = function(...args) {', args);
+    args = add_line('   let newargs = {};', args);
+    args = add_line('   newargs.verbose = 5;', args);
+    args = add_line('   let logger = jstracer.set_args(newargs,\'newcall\');', args);
+    args = add_line('   jstracer.trace(...args);', args, 'trace');
+    linearr.push(args.lineno);
+    args = add_line('   jstracer.info(...args);', args, 'info');
+    linearr.push(args.lineno);
+    args = add_line('   jstracer.debug(...args);', args, 'debug');
+    linearr.push(args.lineno);
+    args = add_line('   jstracer.warn(...args);', args, 'warn');
+    linearr.push(args.lineno);
+    args = add_line('   jstracer.error(...args);', args, 'error');
+    linearr.push(args.lineno);
+    args = add_line('   logger.trace(...args);', args, 'trace');
+    linearr.push(args.lineno);
+    args = add_line('   logger.info(...args);', args, 'info');
+    linearr.push(args.lineno);
+    args = add_line('   logger.debug(...args);', args, 'debug');
+    linearr.push(args.lineno);
+    args = add_line('   logger.warn(...args);', args, 'warn');
+    linearr.push(args.lineno);
+    args = add_line('   logger.error(...args);', args, 'error');
+    linearr.push(args.lineno);
+
+    for (idx = 0 ; idx < notearr.length ; idx += 1) {
+        args = add_note(args, notearr[idx],linearr[idx]);
+    }
+
+    args = add_line('};', args);
+    args = add_line('', args);
+
+    args = add_line('var callA2 = function(...args) {', args);
+    args = add_line('   callA1(...args);', args);
+    for (idx =0 ; idx < notearr.length; idx += 1) {
+        args = add_note(args,notearr[idx], args.lineno);
+    }
+
+
+    args = add_line('};',args);
+    args = add_line('', args);
+
+    args = add_line('var callA3 = function(...args) {', args);
+    args = add_line('    callA2(...args);', args);
+    for (idx = 0; idx < notearr.length; idx += 1) {
+        args = add_note(args, notearr[idx],args.lineno);
+    }
+
+    args = add_line('};', args);
+    args = add_line('', args);
+
+    args = add_line('args.verbose = 5;', args);
+    args = add_line('jstracer.set_args(args);', args);
+    args = add_line('callA1(\'hello %s\', \'world\');', args);
+    args = add_line('callA1(0,\'hello %s\', \'world\');', args);
+    args = add_line('callA2(1,\'hello %s\', \'world\');', args);
+    args = add_line('callA3(2,\'hello %s\', \'world\');', args);
+
+
+    Promise.all([
+        create_file(t,'runlogXXXXXX.log')
+    ])
+    .then( files => {
+        Promise.all([
+            write_file(t,files[0])
+        ])
+        .then( () => {
+            const retcmd = format_cmd(files[0]);
+            exec(retcmd)
+            .then(res => {
+                const lines = res.stderr.toString().split('\n').filter(l => l.length > 0);
+                let idx;
+                let retnote;
+                for (idx = 0; idx < lines.length ; idx += 1) {
+                    retnote = parse_line_note(lines[idx]);
+                    t.truthy(retnote.note === args.notes[idx], util.format('[%s][%s] !== [%s]', idx, retnote.note, args.notes[idx]));
+                    t.truthy(retnote.lineno === args.lines[idx], util.format('[%s][%s] !== [%s]', idx, retnote.lineno, args.lines[idx]));
+                }
+                Promise.all([
+                    delete_file(t,files[0])
+                    ])
+                .then( () => {
+                    t.end();
+                })
+                .catch( err4 => {
+                    t.truthy(err4 === undefined || err4 === null, util.format('remove [%s] error[%s]', files[0], err4));
+                    t.end();
+                });
+            })
+            .catch( err3 => {
+                t.truthy(err3 === undefined || err3 === null, `run [${retcmd}] error [${err3}]`);
+                t.end();
+            });
+        })
+        .catch( err2 => {
+            t.truthy(err2 === undefined || err2 === null, `write file [${file}] error [${err2}]`);
+            t.end();
+        });
+    })
+    .catch( err => {
+        t.truthy(err === null || err === undefined, `create file error ${err}`);
+        t.end();
+    });
 
 });
