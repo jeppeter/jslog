@@ -6,7 +6,7 @@
 
 
 ```js
-import * as jstracer from 'jstracer';
+import * as jstracer from '../../lib';
 
 const trace_exit = function(ec) {
     jstracer.finish(err => {
@@ -33,7 +33,7 @@ const args = {
     log_files: [],
     log_appends: [],
     log_console: true,
-    log_format: '<{{title}}>:{{file}}:{{line}} {{message}}\n',
+    log_format: '<{{title}}> {{message}}\n',
 };
 
 const value = 'code';
@@ -50,9 +50,8 @@ jstracer.trace('value %s lvalue %s', value, lvalue);
 
 > output 
 ```shell
-<error>:console2.js:42 value code lvalue 32
-<warn>:console2.js:43 value code lvalue 32
-```
+<error> [Z:\jstracer\libexample\console\console2.js:Object.<anonymous>:42] value code lvalue 32
+<warn> [Z:\jstracer\libexample\console\console2.js:Object.<anonymous>:43] value code lvalue 32```
 
 > to get the special case for special name
 
@@ -110,6 +109,7 @@ args.args.forEach(l => {
     logger.debug('%s', l);
     logger.trace('%s', l);
 });
+
 ```
 
 > shell call 
@@ -121,11 +121,11 @@ node example2.js  -n logger1 -vvvv "hello world"
 > output
 
 ```shell
-<error>:logname.js:53 hello world
-<warn>:logname.js:54 hello world
-<info>:logname.js:55 hello world
-<debug>:logname.js:56 hello world
-<trace>:logname.js:57 hello world
+<error> [Z:\\jstracer\\libexample\\console\\logname.js::53] hello world
+<warn> [Z:\\jstracer\\libexample\\console\\logname.js::54] hello world
+<info> [Z:\\jstracer\\libexample\\console\\logname.js::55] hello world
+<debug> [Z:\\jstracer\\libexample\\console\\logname.js::56] hello world
+<trace> [Z:\\jstracer\\libexample\\console\\logname.js::57] hello world
 ```
 
 ## reference for the key of args set
@@ -137,4 +137,4 @@ node example2.js  -n logger1 -vvvv "hello world"
 -  log_files  to log into the file default none ,not to the file 
 -  log_appends : almost as log_files ,but append log to the end of the file
 -  log_console : default true for stderr  if false ,no logout to stdout
--  log_format : default '<{{title}}>:{{file}}:{{line}} {{message}}\n' will give the vivid
+-  log_format : default '<{{title}}> {{message}}\n' will give the vivid

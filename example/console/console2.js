@@ -25,7 +25,7 @@ const args = {
     log_files: [],
     log_appends: [],
     log_console: true,
-    log_format: '<{{title}}>:{{file}}:{{line}} {{message}}\n',
+    log_format: '<{{title}}> {{message}}\n',
 };
 
 const value = 'code';
