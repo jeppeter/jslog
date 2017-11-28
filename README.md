@@ -50,8 +50,10 @@ jstracer.trace('value %s lvalue %s', value, lvalue);
 
 > output 
 ```shell
-<error> [Z:\jstracer\libexample\console\console2.js:Object.<anonymous>:42] value code lvalue 32
-<warn> [Z:\jstracer\libexample\console\console2.js:Object.<anonymous>:43] value code lvalue 32```
+<error> [Z:\\jstracer\\libexample\\console\\console2.js:Object.<anonymous>:42] value code lvalue 32
+<warn> [Z:\\jstracer\\libexample\\console\\console2.js:Object.<anonymous>:43] value code lvalue 32
+```
+
 
 > to get the special case for special name
 
