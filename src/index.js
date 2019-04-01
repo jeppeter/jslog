@@ -149,8 +149,6 @@ const get_stacks = () => {
             curstk = parse_line_func(sarr[idx]);
             if (curstk !== null) {
                 stacks.push(curstk);
-            } else {
-                console.error('[%s]can not get stack [%s]', idx, sarr[idx]);
             }
         }
     }

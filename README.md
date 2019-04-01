@@ -2,6 +2,7 @@
 > tracer for multiple handles for use
 
 ### Release History
+* Apr 1st 2019 Release 1.1.8 to fixup the console.error on get_stacks on Array.forEach nothing
 * Nov 28th 2017 Release 1.1.2 to fixup bug when call the output format of line and files
 
 
