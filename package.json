@@ -1,6 +1,6 @@
 {
   "name": "jstracer",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "js tracer for the debug and file information",
   "main": "lib/index.js",
   "repository": "http://github.com/jeppeter/jstracer",
@@ -10,8 +10,8 @@
     "buildexample": "node ./node_modules/babel-cli/bin/babel.js example --out-dir libexample"
   },
   "dependencies": {
-    "tracer": "latest",
-    "extargsparse": "latest"
+    "tracer": "^1.0.0",
+    "extargsparse": "^1.0.4"
   },
   "devDependencies": {
     "ava": "^0.18.1",
